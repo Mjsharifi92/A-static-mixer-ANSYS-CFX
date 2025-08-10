@@ -6,13 +6,98 @@ This repository contains my CFD study of a static mixer performed in **ANSYS CFX
 Static mixers are used in chemical processing, water treatment, and HVAC systems to enhance mixing without moving parts.  
 In this project, I tested mesh sizes from **25k** to **2M+** elements, applied **y⁺-controlled inflation layers**, compared **Upwind** vs **High-Resolution** discretization schemes, and quantified performance using a **Mixing Index (MI)** at the outlet.
 
-## Key Findings
-- **Fine mesh (~542k elements) + High-Resolution** produced results almost identical to ultra-fine meshes while cutting CPU time by ~65%.
-- Proper near-wall resolution (**y⁺ ≈ 30–100**) was essential for accurate turbulence capture.
-- High-Resolution preserved sharper gradients; Upwind smoothed them out.
+## Methodology
+
+### 1. Geometry Design
+The static mixer geometry was designed to represent an industrial mixing unit with features that enhance passive mixing while maintaining computational feasibility for a mesh independence study.
+
+Key features:
+- **Two inlet channels**: Deliver separate fluid streams at different temperatures.
+- **Mixing chamber with a toroidal bend**: Induces secondary flows and swirl for enhanced mixing without moving parts.
+- **Single outlet channel**: Sized to maintain target velocities and avoid excessive pressure drop.
+
+This geometry is representative of mixers used in chemical processing, water treatment, and HVAC systems.
+
+---
+
+### 2. Boundary Conditions
+The case simulates a controlled industrial scenario:
+
+| Boundary      | Velocity (m/s) | Temperature (K) | Notes                                |
+|---------------|----------------|-----------------|---------------------------------------|
+| **Inlet 1**   | 2.0            | 285             | Uniform velocity and temperature     |
+| **Inlet 2**   | 2.0            | 315             | Uniform velocity and temperature     |
+| **Outlet**    | Pressure outlet (0 Pa gauge) | N/A | Fully developed outflow |
+| **Walls**     | No-slip        | Adiabatic       | No heat transfer through walls       |
+
+---
+
+### 3. Turbulence Model
+The **SST \( k-\omega \)** model was selected for its ability to:
+- Accurately capture near-wall effects.
+- Handle separated flows and streamline curvature.
+- Blend \( k-\omega \) near walls with \( k-\epsilon \) in the free stream.
+
+---
+
+### 4. Discretization Schemes
+Two schemes were tested for convection terms:
+
+#### 4.1 Upwind
+- First-order accurate, using upstream values for interpolation.
+- Stable and robust but introduces **numerical diffusion**.
+- Leads to smoother gradients and reduced peak values.
+
+#### 4.2 High-Resolution
+- Blends first-order and second-order schemes.
+- Preserves sharper gradients and small-scale features.
+- Reduces numerical diffusion while avoiding spurious oscillations.
+
+---
+
+### 5. Mesh Design & Inflation Layers
+Meshes of increasing resolution were generated to evaluate mesh independence:
+
+| Mesh Level     | Elements      |
+|----------------|---------------|
+| Coarse         | ~25,000       |
+| Medium         | ~62,000       |
+| Intermediate   | ~261,000      |
+| Fine           | ~542,000      |
+| Ultra-Fine     | ~2,028,000    |
+
+#### Inflation Layers:
+- **y⁺ target**: 30–100 (SST \( k-\omega \) scalable wall functions).
+- **First layer height**: Calculated from y⁺ target.
+- **Number of layers**: 5–8.
+- **Growth rate**: ≤ 1.2 to avoid excessive stretching.
+
+These layers ensure accurate wall shear stress and thermal gradient capture.
+
+---
+
+### 6. Performance Metric — Mixing Index (MI)
+The **Mixing Index (MI)** was calculated at the outlet plane:
+
+\[
+MI = 1 - \frac{\sigma}{\sigma_{\text{max}}}
+\]
+where:
+- \(\sigma\) = Standard deviation of temperature at the outlet.
+- \(\sigma_{\text{max}}\) = Standard deviation for the completely unmixed case.
+
+An MI near **1.0** indicates high mixing efficiency.
+
+---
+
+### 7. Case Files
+All geometry, mesh setups, and ANSYS CFX case files (.ccl/.def/.res) are available here:  
+📂 **[Google Drive — Static Mixer CFD Data](https://drive.google.com/drive/folders/1RmY7mpxsLA048t4DLcVpCGNWAs5pRog1)**
+
+---
 
 ## Repository Structure
-```
+
 .
 ├── README.md               # Project description (this file)
 ├── LICENSE                 # License information
